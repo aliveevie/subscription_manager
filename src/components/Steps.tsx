@@ -53,9 +53,17 @@ export default function Steps() {
   useEffect(() => {
     if (!isConnected) {
       changeStep(1);
+      return;
+    }
+    
+    // If user has chosen not to use smart accounts, always go to subscription plans
+    if (isConnected && !useSmartAccount) {
+      changeStep(4);
+      return;
     }
 
-    if (isConnected && smartAccount && !delegateSmartAccount) {
+    // Only proceed with smart account flow if the user opted for it
+    if (isConnected && useSmartAccount && smartAccount && !delegateSmartAccount) {
       smartAccount.isDeployed().then((isDeployed) => {
         if (!isDeployed) {
           changeStep(2);
@@ -66,7 +74,7 @@ export default function Steps() {
       });
     }
 
-    if (isConnected && smartAccount && delegateSmartAccount) {
+    if (isConnected && useSmartAccount && smartAccount && delegateSmartAccount) {
       const delegation = getDelegation(delegateSmartAccount.address);
       if (!delegation) {
         changeStep(4);
@@ -75,7 +83,7 @@ export default function Steps() {
         changeStep(5);
       }
     }
-  }, [isConnected, smartAccount, delegateSmartAccount]);
+  }, [isConnected, smartAccount, delegateSmartAccount, useSmartAccount]);
 
   const selectPlan = (planId: number) => {
     setSelectedPlan(planId);
