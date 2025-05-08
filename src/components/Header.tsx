@@ -7,7 +7,7 @@ export default function Header() {
   const { isConnected, address } = useAccount();
   const { disconnect } = useDisconnect();
   const chainId = useChainId();
-  const { isCorrectNetwork, switchToSepolia, isNetworkSwitching, targetChain } = useAccountAbstractionUtils();
+  const { isCorrectNetwork, switchToSepolia, isNetworkSwitching } = useAccountAbstractionUtils();
 
   // Format address for display (0x1234...5678)
   const formatAddress = (address: string | undefined) => {
