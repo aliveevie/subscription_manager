@@ -1,0 +1,241 @@
+.subscription-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.subscription-step {
+  background-color: var(--gray-alpha-100);
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.subscription-step h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  color: #1a73e8;
+  background: linear-gradient(to right, #1a73e8, #8e43e7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.step-description {
+  font-size: 1rem;
+  line-height: 1.6;
+  margin: 0;
+  color: var(--foreground);
+  opacity: 0.9;
+}
+
+.subscription-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.5rem;
+  margin: 1rem 0;
+}
+
+.plan-card {
+  background-color: var(--background);
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.plan-selected {
+  border-color: #1a73e8;
+  background-color: rgba(26, 115, 232, 0.05);
+}
+
+.plan-name {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+}
+
+.plan-price {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: #1a73e8;
+}
+
+.plan-period {
+  font-size: 0.9rem;
+  opacity: 0.7;
+  margin-bottom: 1.5rem;
+}
+
+.plan-features {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.plan-features li {
+  padding: 0.5rem 0;
+  font-size: 0.95rem;
+  position: relative;
+  padding-left: 1.5rem;
+}
+
+.plan-features li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #1a73e8;
+  font-weight: bold;
+}
+
+.create-subscription {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--gray-alpha-200);
+}
+
+.subscription-info {
+  padding: 1rem;
+  background-color: rgba(26, 115, 232, 0.1);
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.subscription-demo {
+  background-color: var(--gray-alpha-100);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.subscription-demo h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+/* New option toggle styles */
+.subscription-options {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: var(--gray-alpha-100);
+  border-radius: 8px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.subscription-options h3 {
+  margin-top: 0;
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+  color: var(--foreground);
+}
+
+.option-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.toggle-text {
+  font-weight: 500;
+}
+
+.option-description {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  padding-left: 1.75rem;
+}
+
+.option-description p {
+  margin: 0.25rem 0;
+}
+
+.info-box {
+  background-color: rgba(26, 115, 232, 0.1);
+  border-left: 4px solid #1a73e8;
+  padding: 1rem;
+  margin: 1rem 0;
+  border-radius: 0 8px 8px 0;
+}
+
+.info-box h4 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #1a73e8;
+}
+
+.info-box p {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+}
+
+.option-button {
+  margin-top: 0.5rem;
+}
+
+.secondary-button {
+  background: none;
+  color: var(--foreground);
+  border: 1px solid var(--gray-alpha-200);
+  opacity: 0.8;
+  margin-top: 1rem;
+}
+
+.secondary-button:hover {
+  background-color: var(--gray-alpha-100);
+  opacity: 1;
+}
+
+.primary-button {
+  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 100%);
+}
+
+.demo-button {
+  background: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+  opacity: 0.9;
+}
+
+.demo-button:hover {
+  opacity: 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .plan-card {
+    background-color: #121212;
+  }
+  
+  .plan-selected {
+    background-color: rgba(26, 115, 232, 0.15);
+  }
+}

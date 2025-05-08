@@ -1,9 +1,9 @@
 import { createPublicClient, http } from "viem";
-import { lineaSepolia } from "viem/chains";
+import { mainnet } from "viem/chains";
 
 // Create a public client for querying blockchain data
 export const publicClient = createPublicClient({
-  chain: lineaSepolia,
+  chain: mainnet,
   transport: http()
 });
 
