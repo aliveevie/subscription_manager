@@ -1,20 +1,23 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import useDelegateSmartAccount from "@/hooks/useDelegateSmartAccount";
+import useDelegatorSmartAccount from "@/hooks/useDelegatorSmartAccount";
 import useStorageClient from "@/hooks/useStorageClient";
 import { useAccountAbstractionUtils } from "@/hooks/useAccountAbstractionUtils";
 import { prepareRedeemDelegationData, getSubscriptionPlanById } from "@/utils/delegationUtils";
 import { 
   formatEthAmount, 
   formatSubscriptionPeriod,
-  getTransactionUrl
+  getTransactionUrl,
+  SUBSCRIPTION_PLANS
 } from "@/utils/subscriptionUtils";
 import { Hex } from "viem";
 import "./SubscriptionManager.css";
 
 export default function SubscriptionManager() {
   const { isConnected, address } = useAccount();
-  const { smartAccount } = useDelegateSmartAccount();
+  const { smartAccount: delegateSmartAccount } = useDelegateSmartAccount();
+  const { smartAccount: delegatorSmartAccount } = useDelegatorSmartAccount();
   const { getDelegation } = useStorageClient();
   const { bundlerClient, paymasterClient, pimlicoClient } = useAccountAbstractionUtils();
   
@@ -27,17 +30,66 @@ export default function SubscriptionManager() {
     txHash: Hex;
   }>>([]);
   
+  // State for regular wallet subscriptions
+  const [regularWalletSubscription, setRegularWalletSubscription] = useState<{
+    planId: number;
+    startDate: number;
+    period: number;
+    maxRenewals: number;
+    currentRenewals: number;
+  } | null>(null);
+  
   // Merchant address - in a real app, this would be the service provider's address
   const merchantAddress = address as `0x${string}` || "0x0000000000000000000000000000000000000000";
   
   useEffect(() => {
-    // In a real app, you would fetch payment history from a backend or blockchain
-    // This is just a placeholder for demonstration
-  }, []);
+    // Check for smart account subscriptions
+    if (delegateSmartAccount) {
+      const delegation = getDelegation(delegateSmartAccount.address);
+      if (delegation && delegation.metadata) {
+        console.log("Found smart account subscription", delegation.metadata);
+      }
+    }
+    
+    // Check for regular wallet subscriptions in localStorage
+    if (address) {
+      // Look for subscriptions in localStorage that match this address
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sub_')) {
+            const subData = JSON.parse(localStorage.getItem(key) || '{}');
+            if (subData.address === address) {
+              console.log("Found regular wallet subscription", subData);
+              setRegularWalletSubscription({
+                planId: subData.planId,
+                startDate: subData.createdAt,
+                period: subData.period,
+                maxRenewals: subData.maxRenewals,
+                currentRenewals: subData.currentRenewals || 0
+              });
+              break;
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error checking for regular wallet subscriptions:", err);
+      }
+    }
+  }, [address, delegateSmartAccount, getDelegation]);
   
   const handleProcessPayment = async () => {
-    if (!isConnected || !smartAccount || !bundlerClient || !pimlicoClient) {
-      setError("Wallet not connected or services not available");
+    if (!isConnected) {
+      setError("Wallet not connected");
+      return;
+    }
+    
+    // Check if we have a smart account subscription or a regular wallet subscription
+    const hasSmartAccountSubscription = delegateSmartAccount && getDelegation(delegateSmartAccount.address)?.metadata;
+    const hasRegularWalletSubscription = regularWalletSubscription !== null;
+    
+    if (!hasSmartAccountSubscription && !hasRegularWalletSubscription) {
+      setError("No active subscription found");
       return;
     }
     
@@ -45,67 +97,125 @@ export default function SubscriptionManager() {
       setLoading(true);
       setError(null);
       
-      // Get the delegation
-      const delegation = getDelegation(smartAccount.address);
-      
-      if (!delegation || !delegation.metadata) {
-        throw new Error("No active subscription found");
-      }
-      
-      const { planId, currentRenewals = 0 } = delegation.metadata;
-      
-      // Get the plan details
-      const plan = getSubscriptionPlanById(planId);
-      
-      if (!plan) {
-        throw new Error("Subscription plan not found");
-      }
-      
-      // Prepare the redemption data for the payment
-      const redeemData = prepareRedeemDelegationData(
-        delegation,
-        merchantAddress,
-        plan.price
-      );
-      
-      // Get gas price from Pimlico
-      const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
-      
-      // Send the user operation
-      const userOperationHash = await bundlerClient.sendUserOperation({
-        account: smartAccount,
-        calls: [
+      // Handle different subscription types
+      if (delegateSmartAccount && hasSmartAccountSubscription) {
+        // Smart account subscription flow
+        // Get the delegation
+        const delegation = getDelegation(delegateSmartAccount.address);
+        
+        if (!delegation || !delegation.metadata) {
+          throw new Error("No active smart account subscription found");
+        }
+        
+        const { planId, currentRenewals = 0 } = delegation.metadata;
+        
+        // Get the plan details
+        const plan = getSubscriptionPlanById(planId);
+        
+        if (!plan) {
+          throw new Error("Subscription plan not found");
+        }
+        
+        // Check if we have the necessary services
+        if (!bundlerClient || !pimlicoClient || !paymasterClient) {
+          throw new Error("Smart account services not available. Please ensure you're on the Sepolia network.");
+        }
+        
+        // Prepare the redemption data for the payment
+        const redeemData = prepareRedeemDelegationData(
+          delegation,
+          merchantAddress,
+          plan.price
+        );
+        
+        // Get gas price from Pimlico
+        const { fast: fee } = await pimlicoClient.getUserOperationGasPrice();
+        
+        // Send the user operation
+        const userOperationHash = await bundlerClient.sendUserOperation({
+          account: delegateSmartAccount,
+          calls: [
+            {
+              to: delegateSmartAccount.environment.DelegationManager,
+              data: redeemData,
+            },
+          ],
+          ...fee,
+          paymaster: paymasterClient,
+        });
+        
+        // Wait for the receipt
+        const { receipt } = await bundlerClient.waitForUserOperationReceipt({
+          hash: userOperationHash,
+        });
+        
+        // Update transaction hash
+        setTransactionHash(receipt.transactionHash);
+        
+        // Update payment history
+        setPaymentHistory(prev => [
           {
-            to: smartAccount.environment.DelegationManager,
-            data: redeemData,
+            date: new Date(),
+            amount: plan.price,
+            txHash: receipt.transactionHash
           },
-        ],
-        ...fee,
-        paymaster: paymasterClient,
-      });
-      
-      // Wait for the receipt
-      const { receipt } = await bundlerClient.waitForUserOperationReceipt({
-        hash: userOperationHash,
-      });
-      
-      // Update transaction hash
-      setTransactionHash(receipt.transactionHash);
-      
-      // Update payment history
-      setPaymentHistory(prev => [
-        {
-          date: new Date(),
-          amount: plan.price,
-          txHash: receipt.transactionHash
-        },
-        ...prev
-      ]);
-      
-      // Update delegation metadata with incremented renewal count
-      delegation.metadata.currentRenewals = currentRenewals + 1;
-      
-      console.log("Payment processed successfully:", receipt);
+          ...prev
+        ]);
+        
+        // Update delegation metadata with incremented renewal count
+        delegation.metadata.currentRenewals = currentRenewals + 1;
+        
+        console.log("Payment processed successfully with smart account:", receipt);
+      } else if (regularWalletSubscription) {
+        // Regular wallet subscription flow
+        // For demo purposes, we'll simulate a successful payment
+        console.log("Processing regular wallet subscription payment");
+        
+        // Get the plan details
+        const plan = getSubscriptionPlanById(regularWalletSubscription.planId);
+        
+        if (!plan) {
+          throw new Error("Subscription plan not found");
+        }
+        
+        // Generate a mock transaction hash for demo purposes
+        const mockTxHash = `0x${Array.from({length: 64}, () => Math.floor(Math.random() * 16).toString(16)).join('')}` as Hex;
+        
+        // Update transaction hash
+        setTransactionHash(mockTxHash);
+        
+        // Update payment history
+        setPaymentHistory(prev => [
+          {
+            date: new Date(),
+            amount: plan.price,
+            txHash: mockTxHash
+          },
+          ...prev
+        ]);
+        
+        // Update regular wallet subscription with incremented renewal count
+        const updatedSubscription = {
+          ...regularWalletSubscription,
+          currentRenewals: regularWalletSubscription.currentRenewals + 1
+        };
+        setRegularWalletSubscription(updatedSubscription);
+        
+        // Update the subscription in localStorage
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('sub_')) {
+            const subData = JSON.parse(localStorage.getItem(key) || '{}');
+            if (subData.address === address) {
+              subData.currentRenewals = updatedSubscription.currentRenewals;
+              localStorage.setItem(key, JSON.stringify(subData));
+              break;
+            }
+          }
+        }
+        
+        console.log("Payment processed successfully with regular wallet");
+      }
     } catch (err) {
       console.error("Error processing payment:", err);
       setError(`Failed to process payment: ${err instanceof Error ? err.message : 'Unknown error'}`);
@@ -115,13 +225,21 @@ export default function SubscriptionManager() {
   };
   
   const getSubscriptionDetails = () => {
-    if (!smartAccount) return null;
+    // Check for smart account subscription first
+    if (delegateSmartAccount) {
+      const delegation = getDelegation(delegateSmartAccount.address);
+      if (delegation && delegation.metadata) {
+        const { planId } = delegation.metadata;
+        return getSubscriptionPlanById(planId);
+      }
+    }
     
-    const delegation = getDelegation(smartAccount.address);
-    if (!delegation || !delegation.metadata) return null;
+    // If no smart account subscription, check for regular wallet subscription
+    if (regularWalletSubscription) {
+      return getSubscriptionPlanById(regularWalletSubscription.planId);
+    }
     
-    const { planId } = delegation.metadata;
-    return getSubscriptionPlanById(planId);
+    return null;
   };
   
   return (
