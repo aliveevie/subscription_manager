@@ -3,7 +3,7 @@ import {
   PimlicoClient,
 } from "permissionless/clients/pimlico";
 import { useEffect, useState } from "react";
-import { http, Chain } from "viem";
+import { http } from "viem";
 import {
   BundlerClient,
   createBundlerClient,

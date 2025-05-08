@@ -6,7 +6,6 @@ import { createSubscriptionDelegation, SUBSCRIPTION_PERIODS } from "@/utils/subs
 import { parseEther } from "viem";
 
 interface CreateSubscriptionButtonProps {
-  planId: number;
   planName: string;
   planPrice: string;
   planPeriod: string;
@@ -14,7 +13,6 @@ interface CreateSubscriptionButtonProps {
 }
 
 export default function CreateSubscriptionButton({
-  planId,
   planName,
   planPrice,
   planPeriod,

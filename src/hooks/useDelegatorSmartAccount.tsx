@@ -20,7 +20,6 @@ export default function useDelegatorSmartAccount(): {
   const [smartAccount, setSmartAccount] = useState<MetaMaskSmartAccount | null>(
     null
   );
-  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     // Clear smart account when network changes to avoid chain ID mismatches
@@ -50,15 +49,12 @@ export default function useDelegatorSmartAccount(): {
         signatory: { walletClient },
       }).then((smartAccount) => {
         setSmartAccount(smartAccount);
-        setError(null);
       }).catch((err) => {
         console.error("Error creating smart account:", err);
-        setError(err);
         setSmartAccount(null);
       });
     } catch (err) {
       console.error("Exception creating smart account:", err);
-      setError(err instanceof Error ? err : new Error(String(err)));
       setSmartAccount(null);
     }
   }, [address, walletClient, publicClient, chainId, isCorrectNetwork]);

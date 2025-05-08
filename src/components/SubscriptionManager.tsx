@@ -1,23 +1,21 @@
 import { useState, useEffect } from "react";
 import { useAccount } from "wagmi";
 import useDelegateSmartAccount from "@/hooks/useDelegateSmartAccount";
-import useDelegatorSmartAccount from "@/hooks/useDelegatorSmartAccount";
 import useStorageClient from "@/hooks/useStorageClient";
 import { useAccountAbstractionUtils } from "@/hooks/useAccountAbstractionUtils";
 import { prepareRedeemDelegationData, getSubscriptionPlanById } from "@/utils/delegationUtils";
 import { 
   formatEthAmount, 
   formatSubscriptionPeriod,
-  getTransactionUrl,
-  SUBSCRIPTION_PLANS
+  getTransactionUrl
 } from "@/utils/subscriptionUtils";
+import { ExtendedDelegation } from "@/types/delegation";
 import { Hex } from "viem";
 import "./SubscriptionManager.css";
 
 export default function SubscriptionManager() {
   const { isConnected, address } = useAccount();
   const { smartAccount: delegateSmartAccount } = useDelegateSmartAccount();
-  const { smartAccount: delegatorSmartAccount } = useDelegatorSmartAccount();
   const { getDelegation } = useStorageClient();
   const { bundlerClient, paymasterClient, pimlicoClient } = useAccountAbstractionUtils();
   
@@ -45,7 +43,7 @@ export default function SubscriptionManager() {
   useEffect(() => {
     // Check for smart account subscriptions
     if (delegateSmartAccount) {
-      const delegation = getDelegation(delegateSmartAccount.address);
+      const delegation = getDelegation(delegateSmartAccount.address) as ExtendedDelegation;
       if (delegation && delegation.metadata) {
         console.log("Found smart account subscription", delegation.metadata);
       }
@@ -85,7 +83,7 @@ export default function SubscriptionManager() {
     }
     
     // Check if we have a smart account subscription or a regular wallet subscription
-    const hasSmartAccountSubscription = delegateSmartAccount && getDelegation(delegateSmartAccount.address)?.metadata;
+    const hasSmartAccountSubscription = delegateSmartAccount && (getDelegation(delegateSmartAccount.address) as ExtendedDelegation)?.metadata;
     const hasRegularWalletSubscription = regularWalletSubscription !== null;
     
     if (!hasSmartAccountSubscription && !hasRegularWalletSubscription) {
@@ -101,7 +99,7 @@ export default function SubscriptionManager() {
       if (delegateSmartAccount && hasSmartAccountSubscription) {
         // Smart account subscription flow
         // Get the delegation
-        const delegation = getDelegation(delegateSmartAccount.address);
+        const delegation = getDelegation(delegateSmartAccount.address) as ExtendedDelegation;
         
         if (!delegation || !delegation.metadata) {
           throw new Error("No active smart account subscription found");
@@ -163,7 +161,9 @@ export default function SubscriptionManager() {
         ]);
         
         // Update delegation metadata with incremented renewal count
-        delegation.metadata.currentRenewals = currentRenewals + 1;
+        if (delegation.metadata) {
+          delegation.metadata.currentRenewals = currentRenewals + 1;
+        }
         
         console.log("Payment processed successfully with smart account:", receipt);
       } else if (regularWalletSubscription) {
@@ -225,9 +225,9 @@ export default function SubscriptionManager() {
   };
   
   const getSubscriptionDetails = () => {
-    // Check for smart account subscription first
+    // Check for active subscription
     if (delegateSmartAccount) {
-      const delegation = getDelegation(delegateSmartAccount.address);
+      const delegation = getDelegation(delegateSmartAccount.address) as ExtendedDelegation;
       if (delegation && delegation.metadata) {
         const { planId } = delegation.metadata;
         return getSubscriptionPlanById(planId);

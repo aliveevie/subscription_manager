@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import useDelegatorSmartAccount from "@/hooks/useDelegatorSmartAccount";
 import useDelegateSmartAccount from "@/hooks/useDelegateSmartAccount";
 import useStorageClient from "@/hooks/useStorageClient";
 import CreateSubscriptionButton from "./CreateSubscriptionButton";
@@ -18,7 +17,6 @@ interface SubscriptionPlan {
 const SERVICE_PROVIDER_ADDRESS = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F";
 
 export default function SubscriptionService() {
-  const { smartAccount: delegatorAccount } = useDelegatorSmartAccount();
   const { smartAccount: delegateAccount } = useDelegateSmartAccount();
   const { getDelegation } = useStorageClient();
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);

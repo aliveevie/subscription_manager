@@ -1,7 +1,7 @@
-import { Delegation } from "@metamask/delegation-toolkit";
+import { ExtendedDelegation } from "@/types/delegation";
 
 export default function useStorageClient() {
-  function storeDelegation(delegation: Delegation) {
+  function storeDelegation(delegation: ExtendedDelegation) {
     localStorage.setItem(
       delegation.delegate,
       JSON.stringify(delegation, (_, value) =>
@@ -10,7 +10,7 @@ export default function useStorageClient() {
     );
   }
 
-  function getDelegation(delegate: string): Delegation | null {
+  function getDelegation(delegate: string): ExtendedDelegation | null {
     const delegation = localStorage.getItem(delegate);
     if (!delegation) {
       return null;

@@ -51,3 +51,4 @@ logs
 # Vite dev/build output
 dist-ssr
 .cache/
+.vercel

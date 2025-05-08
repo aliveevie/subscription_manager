@@ -5,6 +5,7 @@ import {
   SINGLE_DEFAULT_MODE,
   type Delegation
 } from "@metamask/delegation-toolkit";
+import { ExtendedDelegation } from "../types/delegation";
 import { parseEther, Address, Hex } from "viem";
 
 // Define our own Execution type since there's an issue with the imported one
@@ -139,7 +140,7 @@ export const createSubscriptionPayment = (
 
 // Create the transaction for redeeming a subscription payment
 export const redeemSubscriptionPayment = (
-  delegation: Delegation,
+  delegation: ExtendedDelegation,
   recipientAddress: Address,
   amountInWei: bigint
 ): Hex => {

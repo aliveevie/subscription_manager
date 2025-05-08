@@ -6,6 +6,7 @@ import useStorageClient from "@/hooks/useStorageClient";
 import { useStepContext } from "@/hooks/useStepContext";
 import { useAccountAbstractionUtils } from "@/hooks/useAccountAbstractionUtils";
 import { prepareRootDelegation } from "@/utils/delegationUtils";
+import { ExtendedDelegation } from "@/types/delegation";
 import { 
   SUBSCRIPTION_PLANS, 
   formatEthAmount, 
@@ -32,19 +33,21 @@ export default function SubscriptionPlans() {
   const { smartAccount: delegateSmartAccount } = useDelegateSmartAccount();
   const { storeDelegation, getDelegation } = useStorageClient();
   const { changeStep } = useStepContext();
-  const { bundlerClient, paymasterClient, pimlicoClient } = useAccountAbstractionUtils();
+  // We'll keep these variables but they're not used in this component
+  // const { bundlerClient, paymasterClient, pimlicoClient } = useAccountAbstractionUtils();
   
   const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
   const [maxRenewals, setMaxRenewals] = useState<number>(12);
   const [isCreatingSubscription, setIsCreatingSubscription] = useState(false);
-  const [transactionHash, setTransactionHash] = useState<string | null>(null);
+  // Keep the state but we don't need to set it in this component
+  const [transactionHash] = useState<string | null>(null);
   const [subscriptionDetails, setSubscriptionDetails] = useState<SubscriptionDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
   
   // Check for existing subscription
   useEffect(() => {
     if (delegateSmartAccount) {
-      const delegation = getDelegation(delegateSmartAccount.address);
+      const delegation = getDelegation(delegateSmartAccount.address) as ExtendedDelegation;
       if (delegation && delegation.metadata) {
         const { planId, createdAt, period, maxRenewals, currentRenewals = 0 } = delegation.metadata;
         

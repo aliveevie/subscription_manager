@@ -4,6 +4,7 @@ import useDelegateSmartAccount from "@/hooks/useDelegateSmartAccount";
 import useStorageClient from "@/hooks/useStorageClient";
 import { redeemSubscriptionPayment } from "@/utils/subscriptionUtils";
 import { parseEther } from "viem";
+import { ExtendedDelegation } from "@/types/delegation";
 
 // Mock bundler client for demo purposes
 // In a real app, this would come from a proper bundler service
@@ -50,7 +51,7 @@ export default function ProcessSubscriptionButton({
       setIsProcessing(true);
 
       // Get the delegation from local storage
-      const delegation = getDelegation(delegateAccount.address);
+      const delegation = getDelegation(delegateAccount.address) as ExtendedDelegation;
       if (!delegation) {
         throw new Error("No valid delegation found for this subscription");
       }
@@ -61,7 +62,7 @@ export default function ProcessSubscriptionButton({
 
       // Create the call data for processing the payment
       const redeemCalldata = redeemSubscriptionPayment(
-        [delegation],
+        delegation,
         serviceAddress,
         priceInWei
       );

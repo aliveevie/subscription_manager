@@ -9,10 +9,10 @@ export const StepProvider = ({ children }: { children: React.ReactNode }) => {
   const [step, setStep] = useState(1);
 
   const changeStep = useCallback(
-    (step: number) => {
-      setStep(step);
+    (newStep: number) => {
+      setStep(newStep);
     },
-    [step]
+    []
   );
 
   return (

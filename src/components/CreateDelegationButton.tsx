@@ -2,7 +2,8 @@ import useDelegateSmartAccount from "@/hooks/useDelegateSmartAccount";
 import useDelegatorSmartAccount from "@/hooks/useDelegatorSmartAccount";
 import { useStepContext } from "@/hooks/useStepContext";
 import useStorageClient from "@/hooks/useStorageClient";
-import { prepareRootDelegation, SUBSCRIPTION_PERIODS } from "@/utils/delegationUtils";
+import { prepareRootDelegation } from "@/utils/delegationUtils";
+import { SUBSCRIPTION_PERIODS } from "@/utils/subscriptionUtils";
 import { useState } from "react";
 import "./CreateDelegationButton.css";
 
