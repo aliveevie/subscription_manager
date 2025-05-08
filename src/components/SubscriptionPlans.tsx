@@ -13,6 +13,7 @@ import {
   calculateNextPaymentDate,
   getSubscriptionStatus
 } from "@/utils/subscriptionUtils";
+import ConnectButton from "./ConnectButton";
 import "./SubscriptionPlans.css";
 
 interface SubscriptionDetails {
@@ -67,10 +68,13 @@ export default function SubscriptionPlans() {
   };
   
   const handleCreateSubscription = async () => {
-    if (!isConnected || !smartAccount || !delegateSmartAccount || !selectedPlan) {
+    if (!isConnected || !selectedPlan) {
       setError("Please connect your wallet and select a plan");
       return;
     }
+    
+    // Check if we're using smart accounts or regular accounts
+    const usingSmartAccount = smartAccount && delegateSmartAccount;
     
     try {
       setIsCreatingSubscription(true);
@@ -82,39 +86,60 @@ export default function SubscriptionPlans() {
         throw new Error("Selected plan not found");
       }
       
-      // Create the delegation for the subscription
-      const delegation = prepareRootDelegation(
-        smartAccount,
-        delegateSmartAccount.address,
-        true, // isSubscription
-        selectedPlanDetails.period,
-        maxRenewals,
-        selectedPlan
-      );
-      
-      // Sign the delegation
-      const signature = await smartAccount.signDelegation({
-        delegation,
-      });
-      
-      // Create signed delegation with metadata
-      const signedDelegation = {
-        ...delegation,
-        signature,
-        metadata: {
+      if (usingSmartAccount) {
+        // Smart account subscription flow
+        // Create the delegation for the subscription
+        const delegation = prepareRootDelegation(
+          smartAccount,
+          delegateSmartAccount.address,
+          true, // isSubscription
+          selectedPlanDetails.period,
+          maxRenewals,
+          selectedPlan
+        );
+        
+        // Sign the delegation
+        const signature = await smartAccount.signDelegation({
+          delegation,
+        });
+        
+        // Create signed delegation with metadata
+        const signedDelegation = {
+          ...delegation,
+          signature,
+          metadata: {
+            planId: selectedPlan,
+            isSubscription: true,
+            period: selectedPlanDetails.period,
+            maxRenewals,
+            currentRenewals: 0,
+            createdAt: Date.now(),
+          }
+        };
+        
+        // Store the delegation
+        storeDelegation(signedDelegation);
+      } else {
+        // Regular account subscription flow - simplified for demo
+        // In a real application, this would involve a different payment mechanism
+        // For demo purposes, we'll just simulate a successful subscription
+        console.log("Creating subscription with regular account");
+        
+        // Create a mock subscription for demo purposes
+        const mockSubscriptionId = `sub_${Date.now()}_${address?.substring(0, 8)}`;
+        
+        // We could store this in localStorage or another storage mechanism
+        localStorage.setItem(mockSubscriptionId, JSON.stringify({
           planId: selectedPlan,
-          isSubscription: true,
+          address: address,
           period: selectedPlanDetails.period,
           maxRenewals,
           currentRenewals: 0,
           createdAt: Date.now(),
-        }
-      };
+        }));
+      }
       
-      // Store the delegation
-      storeDelegation(signedDelegation);
-      
-      // Update subscription details
+      // Update subscription details (same for both flows)
       setSubscriptionDetails({
         planId: selectedPlan,
         startDate: Date.now(),
@@ -147,7 +172,24 @@ export default function SubscriptionPlans() {
   
   return (
     <div className="subscription-plans-container">
-      {subscriptionDetails ? (
+      {!isConnected ? (
+        <div className="wallet-connect-section">
+          <h2>Connect Your Wallet</h2>
+          <p className="connect-description">
+            To view and manage subscription plans, please connect your MetaMask wallet first.
+            This will allow you to create automated subscription payments on the Sepolia test network.
+          </p>
+          <div className="connect-button-container">
+            <ConnectButton />
+          </div>
+          <div className="network-info">
+            <div className="network-badge">Sepolia Test Network</div>
+            <p className="network-note">
+              This application runs on the Sepolia test network. Make sure your wallet is configured for Sepolia.
+            </p>
+          </div>
+        </div>
+      ) : subscriptionDetails ? (
         <div className="active-subscription">
           <h2>Your Active Subscription</h2>
           
@@ -278,6 +320,12 @@ export default function SubscriptionPlans() {
               >
                 {isCreatingSubscription ? "Creating Subscription..." : "Subscribe Now"}
               </button>
+              
+              {(!smartAccount || !delegateSmartAccount) && (
+                <div className="account-info">
+                  <p>You're subscribing with a regular wallet. For enhanced features like automated renewals, consider setting up a smart account in the account options.</p>
+                </div>
+              )}
               
               <p className="subscription-note">
                 By subscribing, you authorize automatic payments via MetaMask delegation.
