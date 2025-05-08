@@ -6,12 +6,10 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import ConnectButton from "./ConnectButton";
 import CreateDelegateButton from "./CreateDelegateButton";
-import CreateDelegationButton from "./CreateDelegationButton";
 import DeployDelegatorButton from "./DeployDelegatorButton";
-import RedeemDelegationButton from "./RedeemDelegationButton";
+import SubscriptionPlans from "./SubscriptionPlans";
+import SubscriptionManager from "./SubscriptionManager";
 import "./Steps.css";
-
-
 
 export default function Steps() {
   const { step, changeStep } = useStepContext();
@@ -20,35 +18,8 @@ export default function Steps() {
   const { smartAccount: delegateSmartAccount } = useDelegateSmartAccount();
   const { getDelegation } = useStorageClient();
 
-  // State for subscription plans and options
-  const [selectedPlan, setSelectedPlan] = useState<number | null>(null);
-  const [isSubscribed, setIsSubscribed] = useState(false);
+  // State for options
   const [useSmartAccount, setUseSmartAccount] = useState(false);
-  
-  // Example subscription plans
-  const subscriptionPlans = [
-    {
-      id: 1,
-      name: "Basic",
-      price: "0.01 ETH",
-      period: "Monthly",
-      features: ["Basic content access", "Standard support", "Single device"]
-    },
-    {
-      id: 2,
-      name: "Premium",
-      price: "0.05 ETH",
-      period: "Monthly",
-      features: ["Premium content access", "Priority support", "Multiple devices", "No ads"]
-    },
-    {
-      id: 3,
-      name: "Annual",
-      price: "0.5 ETH",
-      period: "Yearly",
-      features: ["All premium features", "VIP support", "Unlimited devices", "Offline access", "20% discount"]
-    }
-  ];
 
   useEffect(() => {
     if (!isConnected) {
@@ -79,15 +50,10 @@ export default function Steps() {
       if (!delegation) {
         changeStep(4);
       } else {
-        setIsSubscribed(true);
         changeStep(5);
       }
     }
   }, [isConnected, smartAccount, delegateSmartAccount, useSmartAccount]);
-
-  const selectPlan = (planId: number) => {
-    setSelectedPlan(planId);
-  };
 
   const skipToPlans = () => {
     changeStep(4);
@@ -100,7 +66,7 @@ export default function Steps() {
           <h2>Connect Your Wallet</h2>
           <p className="step-description">
             Connect your MetaMask wallet to get started with subscription payments.
-            Your wallet will be used to create a delegation for automated recurring payments.
+            Your wallet will be used to create a delegation for automated recurring payments on the Sepolia network.
           </p>
           <ConnectButton />
           
@@ -178,81 +144,14 @@ export default function Steps() {
       )}
       
       {step === 4 && (
-        <div className="subscription-step">
-          <h2>Choose Your Subscription Plan</h2>
-          <p className="step-description">
-            Select a subscription plan that works for you. Your payment will be automated
-            using MetaMask's delegation toolkit - no need to approve each payment!
-          </p>
-          
-          <div className="subscription-plans">
-            {subscriptionPlans.map((plan) => (
-              <div 
-                key={plan.id} 
-                className={`plan-card ${selectedPlan === plan.id ? 'plan-selected' : ''}`}
-                onClick={() => selectPlan(plan.id)}
-              >
-                <h3 className="plan-name">{plan.name}</h3>
-                <div className="plan-price">{plan.price}</div>
-                <div className="plan-period">{plan.period}</div>
-                <ul className="plan-features">
-                  {plan.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-          
-          {selectedPlan && (
-            <div className="create-subscription">
-              <p className="subscription-info">
-                You're creating an automated subscription payment delegation.
-                This will allow payments to be processed automatically without requiring
-                your approval each time.
-              </p>
-              {useSmartAccount ? (
-                <CreateDelegationButton />
-              ) : (
-                <button 
-                  className="button primary-button"
-                  onClick={() => changeStep(5)}
-                >
-                  Subscribe Now
-                </button>
-              )}
-            </div>
-          )}
+        <div className="subscription-step subscription-plan-step">
+          <SubscriptionPlans />
         </div>
       )}
       
       {step === 5 && (
-        <div className="subscription-step">
-          <h2>Subscription Active!</h2>
-          <p className="step-description">
-            Your subscription is now active and payments will be processed automatically
-            according to your chosen plan. The merchant can now process payments without
-            requiring your approval each time.
-          </p>
-          
-          {useSmartAccount && isSubscribed ? (
-            <div className="subscription-demo">
-              <h3>Subscription Payment Demo</h3>
-              <p>As a demonstration, you can simulate a merchant processing a subscription payment:</p>
-              <RedeemDelegationButton />
-            </div>
-          ) : (
-            <div className="subscription-demo">
-              <h3>Subscription Payment Demo</h3>
-              <p>
-                In a real implementation, the merchant would use the delegation to process
-                payments periodically without requiring your approval each time.
-              </p>
-              <button className="button demo-button">
-                Simulate Payment (Demo Only)
-              </button>
-            </div>
-          )}
+        <div className="subscription-step subscription-manager-step">
+          <SubscriptionManager />
         </div>
       )}
     </div>

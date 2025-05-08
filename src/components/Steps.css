@@ -4,6 +4,7 @@
   gap: 2rem;
   max-width: 800px;
   margin: 0 auto;
+  padding: 2rem 1rem;
   animation: fadeIn 0.5s ease-in-out;
 }
 
@@ -13,12 +14,21 @@
 }
 
 .subscription-step {
-  background-color: var(--gray-alpha-100);
-  border-radius: 12px;
+  background: #ffffff;
+  border-radius: 16px;
   padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.subscription-plan-step,
+.subscription-manager-step {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .subscription-step h2 {
@@ -33,11 +43,11 @@
 }
 
 .step-description {
-  font-size: 1rem;
+  font-size: 1.1rem;
   line-height: 1.6;
   margin: 0;
-  color: var(--foreground);
-  opacity: 0.9;
+  margin-bottom: 2rem;
+  color: #666;
 }
 
 .subscription-plans {
@@ -137,9 +147,10 @@
   margin-bottom: 1rem;
 }
 
-/* New option toggle styles */
 .subscription-options {
   margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #eee;
   padding: 1.5rem;
   background-color: var(--gray-alpha-100);
   border-radius: 8px;

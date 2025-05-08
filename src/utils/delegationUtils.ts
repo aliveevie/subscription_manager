@@ -8,27 +8,35 @@ import {
   SINGLE_DEFAULT_MODE,
 } from "@metamask/delegation-toolkit";
 import { Address, Hex } from "viem";
+import { SUBSCRIPTION_PERIODS, SUBSCRIPTION_PLANS } from "./subscriptionUtils";
 
-// Subscription periods in seconds
-export const SUBSCRIPTION_PERIODS = {
-  DAILY: 60 * 60 * 24,
-  WEEKLY: 60 * 60 * 24 * 7,
-  MONTHLY: 60 * 60 * 24 * 30,
-  YEARLY: 60 * 60 * 24 * 365
+// Sepolia network configuration
+export const SEPOLIA_CONFIG = {
+  chainId: 11155111,
+  name: "Sepolia",
+  blockExplorer: "https://sepolia.etherscan.io"
 };
 
+/**
+ * Prepare a delegation for subscription payments
+ * @param delegator The delegator's smart account
+ * @param delegate The delegate's address
+ * @param isSubscription Whether this is a subscription delegation
+ * @param periodInSeconds The subscription period in seconds
+ * @param maxRenewals The maximum number of renewals allowed
+ * @param planId Optional plan ID for subscription metadata
+ * @returns A delegation object
+ */
 export function prepareRootDelegation(
   delegator: MetaMaskSmartAccount,
   delegate: Address,
   isSubscription: boolean = false,
-  _periodInSeconds: number = SUBSCRIPTION_PERIODS.MONTHLY, // Prefix with underscore to indicate it's intentionally unused for now
-  maxRenewals: number = 12
+  periodInSeconds: number = SUBSCRIPTION_PERIODS.MONTHLY,
+  maxRenewals: number = 12,
+  planId?: number
 ): Delegation {
   // If this is a regular delegation (not subscription based)
   if (!isSubscription) {
-    // The following caveat enforcer is a simple example that limits
-    // the number of executions the delegate can perform on the delegator's
-    // behalf.
     const caveats = createCaveatBuilder(delegator.environment)
       .addCaveat("limitedCalls", 1)
       .build();
@@ -41,19 +49,23 @@ export function prepareRootDelegation(
   }
   
   // For subscription-based delegations
-  // In a real implementation, we would use these values with a custom time-based caveat enforcer
-  // const now = Math.floor(Date.now() / 1000);
-  // const expiresAt = now + (_periodInSeconds * maxRenewals);
+  const now = Math.floor(Date.now() / 1000);
+  const expiresAt = now + (periodInSeconds * maxRenewals);
   
   // Create caveats for subscription
-  const caveats = createCaveatBuilder(delegator.environment)
+  const caveatBuilder = createCaveatBuilder(delegator.environment)
     // Limit calls to the max number of renewals
-    .addCaveat("limitedCalls", maxRenewals)
-    .build();
-    
-  // Note: The delegation toolkit doesn't have a built-in time-based caveat enforcer.
-  // In a real app, we would implement a custom time-based caveat enforcer.
+    .addCaveat("limitedCalls", maxRenewals);
+  
+  // Add network caveat to ensure it only works on Sepolia
+  if (delegator.environment.chainId === SEPOLIA_CONFIG.chainId) {
+    caveatBuilder.addCaveat("onlyOnChain", SEPOLIA_CONFIG.chainId);
+  }
+  
+  // Build the caveats
+  const caveats = caveatBuilder.build();
 
+  // Create the delegation
   return createDelegation({
     to: delegate,
     from: delegator.address,
@@ -61,6 +73,13 @@ export function prepareRootDelegation(
   });
 }
 
+/**
+ * Prepare the calldata for redeeming a delegation
+ * @param delegation The delegation to redeem
+ * @param paymentAddress The recipient address for the payment
+ * @param amountInWei The payment amount in wei
+ * @returns Encoded calldata for the redemption
+ */
 export function prepareRedeemDelegationData(
   delegation: Delegation,
   paymentAddress?: Address,
@@ -79,10 +98,11 @@ export function prepareRedeemDelegationData(
   
   // For subscription payment delegations
   // Create an execution for sending ETH
-  const execution = createExecution();
-  
-  // In a real implementation, we would use execution.target = paymentAddress 
-  // and execution.value = amountInWei to create a payment execution
+  const execution = createExecution({
+    to: paymentAddress,
+    value: amountInWei,
+    data: "0x" as Hex // Empty data for ETH transfers
+  });
   
   const data = DelegationFramework.encode.redeemDelegations({
     delegations: [[delegation]],
@@ -91,4 +111,41 @@ export function prepareRedeemDelegationData(
   });
   
   return data;
+}
+
+/**
+ * Get a subscription plan by ID
+ * @param planId The plan ID to look up
+ * @returns The subscription plan or undefined if not found
+ */
+export function getSubscriptionPlanById(planId: number) {
+  return SUBSCRIPTION_PLANS.find(plan => plan.id === planId);
+}
+
+/**
+ * Format a date for display
+ * @param date The date to format
+ * @returns Formatted date string
+ */
+export function formatDate(date: Date): string {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+}
+
+/**
+ * Calculate the total subscription cost
+ * @param amountPerPeriod Amount per period in wei
+ * @param periodInSeconds Period length in seconds
+ * @param maxRenewals Maximum number of renewals
+ * @returns Total cost in wei
+ */
+export function calculateTotalSubscriptionCost(
+  amountPerPeriod: bigint,
+  periodInSeconds: number,
+  maxRenewals: number
+): bigint {
+  return amountPerPeriod * BigInt(maxRenewals);
 }

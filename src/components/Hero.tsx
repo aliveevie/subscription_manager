@@ -3,16 +3,30 @@ export default function Hero() {
     <div className="hero">
       <h1 className="hero-title">
         <span className="hero-gradient-text">
-          Subscription <br />
-          Payments
+          Professional <br />
+          Subscription Payments
         </span>{" "}
         <span className="hero-emoji">💸</span>
       </h1>
       <div className="hero-subtitle">
-        Seamless recurring payments with MetaMask Delegation
+        Complete Subscription Solution on Sepolia Network
       </div>
       <div className="hero-description">
-        Create subscription-based services with ERC-7715 allowing users to set up recurring payments without repeated approvals
+        Create powerful subscription-based services with MetaMask Delegation Toolkit (ERC-7715) enabling automated recurring payments without repeated approvals
+      </div>
+      <div className="hero-features">
+        <div className="feature">
+          <span className="feature-icon">✓</span>
+          <span className="feature-text">Multiple subscription tiers</span>
+        </div>
+        <div className="feature">
+          <span className="feature-icon">✓</span>
+          <span className="feature-text">Secure payment processing</span>
+        </div>
+        <div className="feature">
+          <span className="feature-icon">✓</span>
+          <span className="feature-text">Complete subscription management</span>
+        </div>
       </div>
     </div>
   );
